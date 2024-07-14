@@ -53,7 +53,8 @@ function App() {
             document.getElementById("projects").scrollIntoView({ behavior: "smooth" })
           }}>Projects</div>
           <div className="underline decoration-1 decoration-gray-200 hover:decoration-gray-950">
-            <a href="https://nobleknight.hashnode.dev" target="_blank">Blog</a></div>
+            <a href="https://nobleknight.hashnode.dev" target="_blank">Blog</a>
+          </div>
         </div>
         <div className="flex sm:hidden justify-center items-center text-xl tracking-tighter relative">
           <div className="underline decoration-1 decoration-gray-200 hover:decoration-gray-950 border px-2 hover:border-gray-950" onClick={() => setShowMenu(!showMenu)}>Menu</div>
@@ -64,7 +65,9 @@ function App() {
             <div className="underline decoration-1 decoration-gray-200 hover:decoration-gray-950 hover:cursor-pointer" onClick={() => {
               document.getElementById("projects").scrollIntoView({ behavior: "smooth" })
             }}>Projects</div>
-            <div className="underline decoration-1 decoration-gray-200 hover:decoration-gray-950">Blog</div>
+            <div className="underline decoration-1 decoration-gray-200 hover:decoration-gray-950">
+              <a href="https://nobleknight.hashnode.dev" target="_blank">Blog</a>
+            </div>
           </div>
         </div>
       </div>
@@ -85,10 +88,10 @@ function App() {
         <div id="about" className="h-full p-4 md:p-16 lg:p-32 xl:p-64 border-b flex flex-col gap-4 justify-center">
           <p className="md:text-xl tracking-tight">
             I am a Fullstack Developer, with passion for learning new things.
-            <br/><span className="font-medium">Polyglot Programmer:</span> Python, JavaScript, C++, Java, Golang, SQL (and always hungry to learn more!)
-            <br/><span className="font-medium">Algorithm Ninja:</span> I love tackling challenging data structures and algorithmic problems.
-            <br/><span className="font-medium">DevOps Do-It-All:</span> Docker, Linux, Bash - my toolkit keeps deployments smooth.
-            <br/><span className="font-medium">Tech-Savvy:</span> React, Django, TailwindCSS, MongoDB, Git, GitHub - you name it, I've likely wrestled with it.
+            <br /><span className="font-medium">Polyglot Programmer:</span> Python, JavaScript, C++, Java, Golang, SQL (and always hungry to learn more!)
+            <br /><span className="font-medium">Algorithm Ninja:</span> I love tackling challenging data structures and algorithmic problems.
+            <br /><span className="font-medium">DevOps Do-It-All:</span> Docker, Linux, Bash - my toolkit keeps deployments smooth.
+            <br /><span className="font-medium">Tech-Savvy:</span> React, Django, TailwindCSS, MongoDB, Git, GitHub - you name it, I've likely wrestled with it.
           </p>
           <div className="flex gap-2">
             <a className="border px-2 py-0 underline decoration-1 decoration-gray-200 hover:border-gray-950 hover:decoration-gray-950 tracking-tighter md:text-lg" href="https://www.linkedin.com/in/ajaydandge" target="_blank">LinkedIn</a>
