@@ -1,7 +1,6 @@
 {
   "name": "nobleknightt.github.io",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "[ \"$(node --version | cut -c 2-3)\" = \"20\" ] && vite",
