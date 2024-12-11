@@ -8,7 +8,11 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Bricolage Grotesque', 'sans-serif'],
+        sans: ["Bricolage Grotesque", "sans-serif"],
+      },
+      cursor: {
+        default: "url(./assets/cursor-default.png), default",
+        pointer: "url(./assets/cursor-pointer.png), pointer",
       },
     },
   },
