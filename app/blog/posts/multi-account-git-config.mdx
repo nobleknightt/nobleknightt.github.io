@@ -1,0 +1,148 @@
+---
+title: "Multi-Account Git Setup with SSH and Commit Signing"
+publishedAt: "2025-05-05"
+summary: "A guide to setting up multiple Git accounts (e.g., work and personal) across different hosting providers like GitHub and GitLab using SSH keys, directory-based Git configuration, and commit signing"
+---
+
+Managing multiple Git accounts (like work, personal, freelance) across different providers (GitHub, GitLab, etc.) can be a hassle—unless you set things up right. This guide shows you how to keep your identities organized using SSH keys, per-directory Git configs, and optional commit signing.
+
+Let's make Git behave nicely—one folder at a time.
+
+
+## 1. Generate a New SSH Key
+
+Time to make a shiny new SSH key.
+
+```bash
+ssh-keygen -t ed25519 -f /home/<user-name>/.ssh/<key-name> -C "<key-name>"
+```
+
+This creates:
+
+- `/home/<user-name>/.ssh/<key-name>` → your **private key**
+- `/home/<user-name>/.ssh/<key-name>.pub` → your **public key**
+
+The `-C` flag just adds a helpful label so you remember what this key is for.
+
+
+## 2. Add the SSH Key to Your Git Hosting Provider
+
+You'll need to copy your public key and paste it into your Git hosting platform (like GitHub or GitLab).
+
+Here's how to copy it:
+
+- **Linux:**
+
+  ```bash
+  cat /home/<user-name>/.ssh/<key-name>.pub | xclip -selection clipboard
+  ```
+
+- **macOS:**
+
+  ```bash
+  pbcopy < /Users/<user-name>/.ssh/<key-name>.pub
+  ```
+
+- **Windows (Git Bash):**
+
+  ```bash
+  cat /c/Users/<user-name>/.ssh/<key-name>.pub | clip
+  ```
+
+Then:
+
+1. Go to your Git provider's settings.
+2. Look for **SSH and GPG Keys** (or similar).
+3. Add the public key as an **authentication key**.
+4. If you're planning to sign commits, also add it as a **signing key**.
+
+
+## 3. Create a Directory for Your Repositories
+
+Windows folks call them folders. Same thing.
+
+This directory will house the repos for a specific identity (e.g., work, personal).
+
+```bash
+mkdir /home/<user-name>/<account-directory>
+cd /home/<user-name>/<account-directory>
+```
+
+**Windows PowerShell:**
+
+```powershell
+mkdir C:/Users/<user-name>/<account-directory>
+cd C:/Users/<user-name>/<account-directory>
+```
+
+
+## 4. Create a Git Config for That Directory
+
+Inside the directory (`<account-directory>`), create a `.gitconfig` file:
+
+### Without Commit Signing:
+
+```ini
+[user]
+ name = <user-name>
+ email = <user-email>
+
+[core]
+ sshCommand = ssh -i /home/<user-name>/.ssh/<key-name> -o IdentitiesOnly=yes
+```
+
+### With Commit Signing (Requires Git 2.34+):
+
+```ini
+[user]
+ name = <user-name>
+ email = <user-email>
+ signingkey = /home/<user-name>/.ssh/<key-name>.pub
+
+[gpg]
+ format = ssh
+
+[commit]
+ gpgsign = true
+
+[core]
+ sshCommand = ssh -i /home/<user-name>/.ssh/<key-name> -o IdentitiesOnly=yes
+```
+
+This sets your Git identity, links the correct SSH key, and (if enabled) signs all your commits using the SSH key.
+
+
+## 5. Link the Directory Config in Your Global Git Config
+
+Tell Git to use this config whenever you're working inside that specific directory.
+
+Edit your global Git config (usually at `/home/<user-name>/.gitconfig` or `C:/Users/<user-name>/.gitconfig`) and add:
+
+### On Linux/macOS:
+
+```ini
+[includeIf "gitdir:/home/<user-name>/<account-directory>/"]
+    path = /home/<user-name>/<account-directory>/.gitconfig
+```
+
+### On Windows:
+
+```ini
+[includeIf "gitdir:C:/Users/<user-name>/<account-directory>/"]
+    path = C:/Users/<user-name>/<account-directory>/.gitconfig
+```
+
+> **Tip:** Use **forward slashes** (`/`) in paths—even on Windows.
+
+
+## Bonus: Add More Identities
+
+To add more Git identities:
+
+- Create another SSH key (e.g., `github-personal`, `gitlab-client`, etc.)
+- Make a new folder (e.g., `/home/<user-name>/personal-projects`)
+- Add a `.gitconfig` with the right name/email/key
+- Add the key to the appropriate Git hosting provider
+- Add another `[includeIf]` block in your global config
+
+Now each directory will automatically use the correct Git identity, SSH key, and commit signing setup.
