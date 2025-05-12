@@ -10,6 +10,7 @@ import ini from "highlight.js/lib/languages/ini";
 import plaintext from "highlight.js/lib/languages/plaintext";
 import csharp from "highlight.js/lib/languages/csharp";
 import typescript from "highlight.js/lib/languages/typescript";
+import http from "highlight.js/lib/languages/http";
 
 
 import "highlight.js/styles/github-dark.css";
@@ -20,6 +21,7 @@ hljs.registerLanguage("ini", ini);
 hljs.registerLanguage("plaintext", plaintext);
 hljs.registerLanguage("csharp", csharp);
 hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("http", http);
 
 function Table({ data }) {
   let headers = data.headers.map((header, index) => (

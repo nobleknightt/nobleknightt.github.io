@@ -1,0 +1,71 @@
+---
+title: "What CORS Is, What CORS Is Not"
+publishedAt: "2025-05-12"
+summary: "CORS is often misunderstood as a security mechanism, but it's really just a browser behavior filter. This post clears up common myths and explains what CORS actually does—and doesn't do."
+---
+
+If you've ever built a frontend that talks to an API, you've probably seen that big red CORS error in your browser console. It's annoying, confusing, and often misunderstood.
+
+In this post, we'll bust a couple of common myths — especially the idea that CORS is a security feature, or that it explains why something works in Postman but not in the browser.
+
+Let's get clear on what CORS actually does — and what it doesn't.
+
+## **What is CORS, really?**
+
+CORS stands for **Cross-Origin Resource Sharing**. It's not a library, it's not a server plugin, and it's definitely not an API security tool.
+
+It's a **browser feature**. Full stop.
+
+When your frontend JavaScript tries to make a request to a different origin — for example:
+
+* Frontend: `http://localhost:3000`
+* API: `https://api.example.com`
+
+— the browser will say:
+"Hang on, are you allowed to talk to that domain?"
+
+Unless the API responds with the right headers, the browser will block the request before it even leaves your machine.
+
+Here's a basic success response header from the server:
+
+```http
+Access-Control-Allow-Origin: http://localhost:3000
+```
+
+And that's it. No header, no request. But again — **this only happens in browsers**.
+
+## **Myth: CORS applies everywhere**
+
+Nope. **CORS only exists in the browser**. It has nothing to do with the server-side, Postman, curl, or your backend code.
+
+Postman will happily make the same request that the browser blocks. It doesn't care about CORS headers. That's why your API might "work in Postman but not in the browser."
+
+The browser is enforcing rules on behalf of the user. That's all.
+
+## **A quick word on preflight**
+
+When you send anything other than a simple `GET` or `POST` (like `PUT`, `DELETE`, custom headers, etc.), the browser doesn't go straight to your API. It first sends an automatic **OPTIONS** request to check if it's allowed — this is called a **preflight request**.
+
+If your server doesn't handle that preflight properly — by sending back the right headers — your main request never gets sent.
+
+So the real issue isn't always your API logic. It might just be missing a proper response to a question the browser asked first.
+
+## **Myth: Adding CORS makes your API secure**
+
+This one's dangerous.
+
+Just because your API only allows requests from `https://some-frontend.com` doesn't mean it's protected. Anyone can still hit your API directly using curl, Postman, a bash script, or their own frontend.
+
+CORS only tells the browser which sites are allowed to call your API **via JavaScript**. It doesn't restrict access at the network level. It doesn't check tokens. It doesn't block unauthorized users.
+
+CORS is a browser behavior filter — **not** a gatekeeper for your data.
+
+So if your API has no authentication, it's public. Period. Doesn't matter what your CORS policy says.
+
+## **Conclusion**
+
+CORS isn't magic. It doesn't secure your API. It's just a browser rule that says "you can only talk to this server if the server says it's okay."
+
+It protects users, not servers. It's enforced by the browser, not the backend. And if your app works in Postman but not in Chrome, chances are you're just missing a header — not a whole security model.
+
+So next time you see a CORS error, take a breath. It's not a bug. It's just the browser doing its job.
