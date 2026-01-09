@@ -4,6 +4,7 @@ import Footer from "app/components/footer";
 import { Navbar } from "app/components/nav";
 import "app/global.css";
 import { baseUrl } from "app/sitemap";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -55,6 +56,7 @@ export default function RootLayout({
           <Footer />
         </main>
       </body>
+      <GoogleAnalytics gaId="G-3V3L4N4VS7" />
     </html>
   );
 }
