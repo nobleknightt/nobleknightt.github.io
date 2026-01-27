@@ -12,6 +12,27 @@ export default function Page() {
       <p className="mb-4">
         {`By the way, nice to see you here! Hope you're having a great day!`}
       </p>
+      <p className="mb-6">
+        {`You can also check out `}
+        <a
+          href="https://contests.ajaydandge.dev/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-4"
+        >
+          Contests
+        </a>
+        {`, a simple platform to track upcoming programming contests, and `}
+        <a
+          href="https://coderun.ajaydandge.dev/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-4"
+        >
+          CodeRun
+        </a>
+        {`, an online code runner to quickly write, run, and test code.`}
+      </p>
       <div className="my-8">
         <BlogPosts />
       </div>
