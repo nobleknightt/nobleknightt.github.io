@@ -1,0 +1,134 @@
+---
+title: "Building Burrow: A CLI for Querying Databases Behind a Bastion"
+publishedAt: "2026-04-10"
+summary: "How I built a developer CLI that tunnels through a bastion host over SSH to query a PostgreSQL database — and the small decisions that made it feel right."
+---
+
+At work, our PostgreSQL database sits behind a bastion host. You cannot connect to it directly — every connection has to go through an SSH tunnel first. This is standard practice for securing RDS instances in a VPC, but it makes ad-hoc querying tedious. You have to open a tunnel in one terminal, connect with `psql` in another, and remember to clean up after yourself.
+
+I wanted something simpler: a single command that opens the tunnel, runs the query, prints the result, and disappears. That became [burrow](https://github.com/nobleknightt/burrow).
+
+## Why the name
+
+A burrow is the tunnel a mole digs underground to reach somewhere hidden. It does not knock. It does not ask. It just finds a way through. That felt right for a tool that quietly bores through a bastion over SSH and surfaces inside a database that was never meant to be directly reachable.
+
+## The tunnel
+
+The first thing I reached for was [`sshtunnel`](https://pypi.org/project/sshtunnel/), a popular PyPI package that wraps paramiko and promises to make SSH port forwarding a one-liner. It did not get far.
+
+`sshtunnel v0.4.0` expects `paramiko >= 2.7.2`, but the project was using `paramiko 3.x`. The two do not play well together — paramiko 3.x removed and restructured several internals that `sshtunnel` depended on, so you get `AttributeError` at runtime on things like `DSSKey` that simply no longer exist in the same form. The package has not been updated to track paramiko's major releases, which means you are stuck: pin to an old paramiko to keep `sshtunnel` happy, or drop `sshtunnel` and use paramiko directly.
+
+I dropped it. `paramiko` is what `sshtunnel` wraps anyway — by using it directly I got full control over the transport, the channel lifecycle, and error handling, without a wrapper that was going to fight me on versions. The implementation is more code, but it is code I understand and can debug.
+
+The core of burrow is a `PostgresSSHTunnel` class built on `paramiko`. The idea is straightforward: open an SSH connection to the bastion, bind a local socket to a random free port, and forward any connections on that port to the RDS host through the SSH transport.
+
+```python
+self.server_socket.bind(("127.0.0.1", 0))  # 0 = let the OS pick a free port
+self.local_port = self.server_socket.getsockname()[1]
+```
+
+Binding to port `0` rather than a hardcoded `5432` is a small but important detail. It means two burrow sessions can run simultaneously without colliding, and you never have to worry about a stale process already holding the port.
+
+Once the tunnel is up, `psycopg` connects to `127.0.0.1:<local_port>` as if it were a local database. The forwarding thread shuttles bytes between the local socket and the SSH channel transparently.
+
+The whole lifecycle is wrapped in a context manager, so the tunnel is always cleaned up:
+
+```python
+with PostgresSSHTunnel(config) as tunnel:
+    conn = tunnel.get_connection()
+    ...
+```
+
+## Configuration: the aws cli pattern
+
+Early on the config was loaded from a `.env` file using `pydantic-settings`. It worked, but it felt wrong — it tied the tool to a working directory and made it awkward to switch between environments.
+
+The better model is how `aws` and `gh` handle configuration: a file at `~/.config/<tool>/config.toml` with named profiles, and environment variables that override everything.
+
+```toml
+[default]
+ssh_host     = "bastion.example.com"
+ssh_key_path = "~/.ssh/id_rsa"
+db_host      = "mydb.cluster.us-east-1.rds.amazonaws.com"
+db_user      = "myuser"
+db_password  = "secret"
+db_name      = "mydb"
+
+[staging]
+ssh_host     = "bastion-staging.example.com"
+...
+```
+
+Priority is: env vars beat the config file, which beats built-in defaults. The config module walks those three sources in order and exits with a helpful message if a required field is missing:
+
+```
+error: missing required config for profile 'staging':
+  db_host  (env: BURROW_DB_HOST)
+
+set them via environment variables, or add a config file:
+  ~/.config/burrow/config.toml
+```
+
+The `--profile` flag is global, so it works across all subcommands:
+
+```bash
+burrow --profile staging query "SELECT count(*) FROM users"
+```
+
+## Interactive setup with `burrow config set`
+
+Typing out a TOML file is fine once — but if you want profiles to feel like a first-class feature, you need an interactive setup flow. `burrow config set` walks through every field, shows the current value in brackets, masks password input, and writes the result back to the config file.
+
+```
+$ burrow config set
+
+  Bastion host (IP or hostname): bastion.example.com
+  SSH username [ec2-user]:
+  Path to SSH private key: ~/.ssh/id_rsa
+  SSH port [22]:
+  Database host: mydb.cluster.us-east-1.rds.amazonaws.com
+  Database port [5432]:
+  Database name: mydb
+  Database username: ajay
+  Database password: ********
+  Default schema [public]:
+
+Profile 'default' saved to ~/.config/burrow/config.toml
+```
+
+Re-running it is non-destructive — existing values are preserved unless you overwrite them. This is the same behaviour as `aws configure`, and it matters: you should be able to update a single field without re-entering everything.
+
+## Output formats for Claude Code
+
+One of the use cases I had in mind from the start was using burrow inside [Claude Code](https://github.com/anthropics/claude-code). Claude Code can run shell commands and read stdout — which means if burrow outputs clean JSON, Claude can parse it and reason over it directly.
+
+```bash
+burrow query "SELECT * FROM orders WHERE status = 'pending'" --output json
+```
+
+Supporting three output formats — `table` for humans, `json` for machines, `csv` for spreadsheets — covers most workflows without overcomplicating the interface.
+
+## Packaging with uv
+
+The project is packaged as a proper Python package using `hatchling` and `uv`. The entry point is declared in `pyproject.toml`:
+
+```toml
+[project.scripts]
+burrow = "burrow.cli:main"
+```
+
+Installing is one command:
+
+```bash
+uv tool install git+https://github.com/nobleknightt/burrow.git
+```
+
+`uv tool install` puts the binary in `~/.local/bin` in its own isolated environment, so burrow's dependencies never conflict with anything else on your system. No virtualenv management, no `pip install --user` quirks.
+
+## The easter egg
+
+There is a hidden command that does not appear in `--help`. If you find it, it prints a poem about what burrow does and why it is named that way. I will not say what the command is.
+
+---
+
+Burrow is small and does one thing. The source is at [github.com/nobleknightt/burrow](https://github.com/nobleknightt/burrow) — install instructions, config reference, and usage examples are all in the README.

@@ -11,6 +11,8 @@ import plaintext from "highlight.js/lib/languages/plaintext";
 import csharp from "highlight.js/lib/languages/csharp";
 import typescript from "highlight.js/lib/languages/typescript";
 import http from "highlight.js/lib/languages/http";
+import python from "highlight.js/lib/languages/python";
+import toml from "highlight.js/lib/languages/ini"; // toml uses ini highlighter
 
 
 import "highlight.js/styles/github-dark.css";
@@ -22,6 +24,8 @@ hljs.registerLanguage("plaintext", plaintext);
 hljs.registerLanguage("csharp", csharp);
 hljs.registerLanguage("typescript", typescript);
 hljs.registerLanguage("http", http);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("toml", toml);
 
 function Table({ data }) {
   let headers = data.headers.map((header, index) => (
