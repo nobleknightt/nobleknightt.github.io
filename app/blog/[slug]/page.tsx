@@ -15,7 +15,9 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }) {
   const post_slug = (await params).slug;
 
-  let post = getBlogPosts().find(async (post) => post.slug === post_slug);
+  let post = getBlogPosts().find((post) => post.slug === post_slug);
+
+  console.log(post_slug, post, post?.slug === post_slug)
 
   if (!post) {
     return;
