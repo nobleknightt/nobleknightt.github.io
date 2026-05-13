@@ -1,0 +1,26 @@
+---
+title: "Burrow Now Supports Direct Connections"
+publishedAt: "2026-05-13"
+summary: "A small addition to burrow: profiles can now connect to PostgreSQL directly, without an SSH tunnel."
+---
+
+A small addition to [burrow](https://github.com/nobleknightt/burrow) since the [last post](https://ajaydandge.dev/blog/building-burrow-cli-for-querying-databases-behind-bastion).
+
+Burrow is primarily a tool for querying databases behind a bastion — that has not changed. But occasionally you want to run the same queries against a local development database that does not need a tunnel. Rather than context-switch to `psql`, you can now add a profile with `use_ssh = false`:
+
+```toml
+[local]
+use_ssh     = false
+db_host     = "localhost"
+db_user     = "myuser"
+db_password = "secret"
+db_name     = "mydb"
+```
+
+When `use_ssh` is false, burrow skips the SSH transport and connects to PostgreSQL directly. Everything else — `burrow query`, `burrow describe`, `burrow shell`, output formats, profile switching — works exactly the same.
+
+`use_ssh` defaults to `true`, so existing configs continue to work without any changes. The `config set` wizard also picks this up: it asks about SSH mode first and only prompts for bastion details when needed.
+
+---
+
+The source is at [github.com/nobleknightt/burrow](https://github.com/nobleknightt/burrow).
