@@ -12,19 +12,61 @@ That one distinction is the root of most timezone bugs in production. Everything
 
 When you ask for local time, you get the raw clock reading with no label attached. Run this on machines in different countries and you get different strings for the same moment:
 
-| Machine location  | Local time | String produced       |
-| ----------------- | ---------- | --------------------- |
-| India (IST +5:30) | 10:30      | `2026-04-28T10:30:00` |
-| UK (UTC +0)       | 05:00      | `2026-04-28T05:00:00` |
-| US (EST -5)       | 00:00      | `2026-04-28T00:00:00` |
+<table>
+  <thead>
+    <tr>
+      <th>Machine location</th>
+      <th>Local time</th>
+      <th>String produced</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>India (IST +5:30)</td>
+      <td>10:30</td>
+      <td><code>2026-04-28T10:30:00</code></td>
+    </tr>
+    <tr>
+      <td>UK (UTC +0)</td>
+      <td>05:00</td>
+      <td><code>2026-04-28T05:00:00</code></td>
+    </tr>
+    <tr>
+      <td>US (EST -5)</td>
+      <td>00:00</td>
+      <td><code>2026-04-28T00:00:00</code></td>
+    </tr>
+  </tbody>
+</table>
 
 When you ask for UTC, the OS applies its own timezone config and returns the converted value. The language never sees the local time at all — it just receives UTC directly:
 
-| Machine location  | Local time | String produced             |
-| ----------------- | ---------- | --------------------------- |
-| India (IST +5:30) | 10:30      | `2026-04-28T05:00:00+00:00` |
-| UK (UTC +0)       | 05:00      | `2026-04-28T05:00:00+00:00` |
-| US (EST -5)       | 00:00      | `2026-04-28T05:00:00+00:00` |
+<table>
+  <thead>
+    <tr>
+      <th>Machine location</th>
+      <th>Local time</th>
+      <th>String produced</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>India (IST +5:30)</td>
+      <td>10:30</td>
+      <td><code>2026-04-28T05:00:00+00:00</code></td>
+    </tr>
+    <tr>
+      <td>UK (UTC +0)</td>
+      <td>05:00</td>
+      <td><code>2026-04-28T05:00:00+00:00</code></td>
+    </tr>
+    <tr>
+      <td>US (EST -5)</td>
+      <td>00:00</td>
+      <td><code>2026-04-28T05:00:00+00:00</code></td>
+    </tr>
+  </tbody>
+</table>
 
 Every machine, the same string. The syntax for asking varies by language, but the mechanism is always the same — you are delegating the conversion to the OS, not implementing it yourself:
 
