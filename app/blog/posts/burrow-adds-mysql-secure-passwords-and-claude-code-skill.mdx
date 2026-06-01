@@ -1,0 +1,53 @@
+---
+title: "Burrow Adds MySQL, Secure Passwords, and a Claude Code Skill"
+publishedAt: "2026-06-01"
+summary: "Burrow now supports MySQL alongside PostgreSQL, stores passwords securely outside config.toml, and ships a proper installer for the Claude Code skill."
+---
+
+A few updates to [burrow](https://github.com/nobleknightt/burrow) since the [last post](https://ajaydandge.dev/blog/burrow-now-supports-direct-connections). This one is more substantial.
+
+## MySQL support
+
+Burrow started as a PostgreSQL tool because that was what I needed. But the tunnel-and-query pattern is not specific to Postgres — MySQL sits behind bastions just as often. So burrow now supports both.
+
+You declare the database type in your profile:
+
+```toml
+[default]
+db_type = "postgres"
+...
+
+[analytics]
+db_type = "mysql"
+...
+```
+
+Everything else — `query`, `describe`, output formats, SSH tunnel mode, direct connection mode, profile switching — works the same regardless of type. Port defaults are type-aware: postgres uses 5432, mysql uses 3306, unless you override them.
+
+## Passwords out of config.toml
+
+The original design stored the database password directly in `~/.config/burrow/config.toml`. The problem surfaced with Claude Code: when exploring the project or resolving config issues, Claude would `cat` the config file and the password would appear in plain text in the conversation.
+
+Passwords are now stored in a separate file at `~/.config/burrow/profiles/<profile>.password`, with permissions set so only the current user can read it. The config file stays clean. The `config set` wizard writes the password file for you, so the setup flow is unchanged — you still just type your password when prompted.
+
+If you prefer not to use a file at all, `BURROW_DB_PASSWORD` in your environment still takes priority over everything.
+
+## `burrow skill install`
+
+Burrow has shipped a `SKILL.md` for Claude Code since the beginning — it tells Claude when to reach for burrow and how to use it. Previously, you had to copy this file manually from the repository to `~/.claude/skills/`. That was easy to forget and easy to get wrong.
+
+Now the skill file is bundled inside the installed package, and a single command handles it:
+
+```bash
+burrow skill install
+```
+
+It also stays in sync with your installed version. If you upgrade burrow without reinstalling the skill, you get a warning the next time you run any burrow command — a nudge to keep the two aligned.
+
+## `burrow shell` is gone
+
+The interactive REPL held an open tunnel and connection for the duration of the session. It seemed useful in theory, but one-shot queries cover the same use case and are easier to reason about. Removing it simplifies both the codebase and the mental model of what burrow does.
+
+---
+
+The source is at [github.com/nobleknightt/burrow](https://github.com/nobleknightt/burrow).
