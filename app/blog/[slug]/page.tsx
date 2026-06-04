@@ -17,8 +17,6 @@ export async function generateMetadata({ params }) {
 
   let post = getBlogPosts().find((post) => post.slug === post_slug);
 
-  console.log(post_slug, post, post?.slug === post_slug)
-
   if (!post) {
     return;
   }
@@ -98,6 +96,14 @@ export default async function Blog({ params }) {
         <p className="text-sm text-neutral-600 dark:text-neutral-400">
           {formatDate(post.metadata.publishedAt)}
         </p>
+        <a
+          href={`/blog/md/${post.slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all px-2 py-1 rounded"
+        >
+          View as Markdown
+        </a>
       </div>
       <article className="prose">
         <CustomMDX source={post.content} />
