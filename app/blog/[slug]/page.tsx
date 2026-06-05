@@ -97,7 +97,7 @@ export default async function Blog({ params }) {
           {formatDate(post.metadata.publishedAt)}
         </p>
         <a
-          href={`/blog/md/${post.slug}`}
+          href={`/blog/md/${post.slug}.md`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all px-2 py-1 rounded"
