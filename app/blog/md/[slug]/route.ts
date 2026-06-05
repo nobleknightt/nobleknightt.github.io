@@ -1,7 +1,7 @@
 import { getBlogPosts } from "app/blog/utils";
 
 export async function generateStaticParams() {
-  return getBlogPosts().map((post) => ({ slug: post.slug }));
+  return getBlogPosts().map((post) => ({ slug: post.slug + ".md" }));
 }
 
 export async function GET(
@@ -9,7 +9,8 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const post = getBlogPosts().find((p) => p.slug === slug);
+  const postSlug = slug.replace(/\.md$/, "");
+  const post = getBlogPosts().find((p) => p.slug === postSlug);
 
   if (!post) {
     return new Response("Not found", { status: 404 });
