@@ -1,0 +1,216 @@
+---
+title: "How I Understand LLMs"
+publishedAt: "2026-04-15"
+summary: "A practical mental model of how large language models work — from tokens and probabilities to inference, context windows, and why they hallucinate."
+---
+
+This is a simple way to think about how large language models work.
+
+An LLM is not a knowledge base or a reasoning engine. It is a system that has learned to continue text in a way that looks correct.
+
+## The vocabulary problem
+
+Language is messy. Computers are not. So the first step is turning text into something a machine can work with.
+
+That starts with a fixed **vocabulary** of tokens.
+
+A token is not necessarily a word. It is a chunk of text the model treats as a unit. Common words may be single tokens. Others get split:
+
+- `"cat"` → one token
+- `"something"` → `"some"` + `"thing"`
+
+Instead of storing every possible word, the model uses a limited set of subword pieces — typically around 30,000. Any word can be constructed from these pieces.
+
+This vocabulary is fixed after training.
+
+Each token is mapped to an integer:
+
+```
+"cat"   → 2368
+"some"  → 1045
+"thing" → 902
+```
+
+There are also special tokens — for stopping, padding, and formatting — treated the same way.
+
+## The core loop
+
+At its simplest, the model does one thing:
+
+> Given a sequence of tokens, predict what token comes next.
+
+You pass in tokens. The model processes all of them together and produces a probability distribution over the entire vocabulary.
+
+For example:
+
+```
+"sat"   → 0.40
+"slept" → 0.25
+"ran"   → 0.10
+...
+```
+
+This happens through a neural network — a stack of transformer layers that combine attention (looking at relationships between tokens) and feed-forward transformations.
+
+You do not need to know the math to understand the behaviour:
+
+> It is a system trained to guess what comes next, based on patterns it has seen before.
+
+## Temperature — shaping the output
+
+The model gives probabilities. Something still has to pick a token.
+
+That is where sampling comes in.
+
+If you always pick the highest probability, the output is deterministic. Same input, same result every time.
+
+Temperature reshapes the distribution before sampling:
+
+- Low temperature → sharper distribution → predictable
+- High temperature → flatter distribution → more variation
+
+Higher values introduce diversity, but also increase the chance of poor output. Lower values produce more stable, repeatable responses.
+
+Temperature does not add randomness directly. It changes how likely each option is before one is selected.
+
+## One token at a time
+
+The model predicts one token. A response is many tokens.
+
+So the process repeats:
+
+1. Take input tokens
+2. Predict next token
+3. Append it
+4. Run again
+
+This loop continues until a stop condition is reached.
+
+The model itself runs once per step. The looping is handled externally by an inference engine.
+
+## The context window
+
+The model does not see everything. It sees a fixed number of recent tokens.
+
+This is the **context window**.
+
+It includes:
+
+- your input
+- previous messages
+- the model's own output
+
+Everything inside this window is processed together. Everything outside it does not exist to the model.
+
+There is no long-term memory. No hidden state across conversations. Just the current context.
+
+## What actually runs the model
+
+There are three distinct layers involved:
+
+**The model**
+
+- Takes tokens
+- Produces probabilities
+- Has no memory of past interactions
+
+**The inference engine**
+
+- Runs the model repeatedly
+- Handles sampling and stopping
+- Maintains a short-term cache so previous tokens are not recomputed
+
+**The application**
+
+- Stores chat history
+- Builds the prompt
+- Decides what fits into the context window
+
+When you send a message, the application reconstructs the conversation, formats it, and sends it to the model. The model only sees that final input.
+
+## Chat models
+
+Chat models are not a different kind of system. They still predict the next token.
+
+What changes is training.
+
+They are further trained to:
+
+- follow instructions
+- produce helpful responses
+- maintain conversational tone
+
+They also use structured formats like:
+
+```
+User: Hello
+Assistant: Hi
+```
+
+This is just text. The model has learned how to behave within it.
+
+## Training — where the knowledge comes from
+
+Training uses the same idea as inference: predict the next token.
+
+Large amounts of text are fed into the model. At each step, it predicts what comes next. The difference between prediction and reality is measured as error.
+
+The weights of the network are then adjusted using optimization algorithms to reduce that error.
+
+This process repeats across massive datasets.
+
+Over time, the model learns patterns of:
+
+- language
+- facts
+- structure
+- style
+
+These patterns are stored in the weights — billions of numerical parameters.
+
+## Weights and size
+
+A model described as “7B” has 7 billion parameters.
+
+Each parameter is a number. Typically stored in 16-bit precision:
+
+```
+7 billion × 2 bytes ≈ 14 GB
+```
+
+That is the model file.
+
+Quantization reduces precision (for example, to 8-bit or 4-bit) to make models smaller and faster, with some loss in accuracy.
+
+## System prompts
+
+Before your input, the system often inserts hidden instructions:
+
+```
+You are a helpful assistant.
+Respond concisely.
+```
+
+This shapes behaviour — tone, constraints, style.
+
+It is part of the input and counts toward the context window.
+
+## Hallucination
+
+The model generates what is most plausible, not what is guaranteed to be true.
+
+It does not:
+
+- check facts
+- access external sources
+- verify correctness
+
+It has no built-in mechanism for truth — only for plausibility.
+
+This is why it can produce confident but incorrect answers.
+
+## The whole thing in one line
+
+Text is broken into tokens. Tokens become numbers. A trained neural network predicts what comes next. One token is chosen. The process repeats.
+
+Everything else — conversation, reasoning, personality — emerges from that loop.

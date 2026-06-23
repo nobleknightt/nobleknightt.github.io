@@ -3,6 +3,7 @@ import { CustomMDX } from "app/components/mdx";
 import { formatDate, getBlogPosts } from "app/blog/utils";
 import { baseUrl } from "app/sitemap";
 import { generateOgImage } from "app/blog/og-image";
+import { generateBlogMarkdown } from "app/blog/blog-markdown";
 
 export async function generateStaticParams() {
   let posts = getBlogPosts();
@@ -29,6 +30,7 @@ export async function generateMetadata({ params }) {
   } = post.metadata;
 
   await generateOgImage(title, post_slug);
+  await generateBlogMarkdown(post_slug);
 
   let ogImage = image ? image : `${baseUrl}/og/${post.slug}.png`;
 
@@ -97,7 +99,7 @@ export default async function Blog({ params }) {
           {formatDate(post.metadata.publishedAt)}
         </p>
         <a
-          href={`/blog/md/${post.slug}.md`}
+          href={`/blog/${post.slug}.md`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all px-2 py-1 rounded"

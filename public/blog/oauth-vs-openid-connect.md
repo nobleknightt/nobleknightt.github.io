@@ -1,0 +1,93 @@
+---
+title: "OAuth vs OpenID Connect: Stop Mixing Them Up"
+publishedAt: "2025-08-19"
+summary: "OAuth is about authorization (what an app can do), while OpenID Connect is about authentication (who the user is)."
+---
+
+If you've ever clicked a “Log in with Google” button, you've touched protocols like **OAuth 2.0** and **OpenID Connect (OIDC)**. But here's the thing: OAuth was never meant for logging in. It was designed for something entirely different — and that's where OIDC comes in.
+
+In this post, we'll cut through the jargon and explain, in plain language, what OAuth is, why people misuse it, and how OIDC fixes the gap.
+
+## OAuth: Delegated Authorization
+
+At its core, **OAuth (Open Authorization)** is a framework for _delegated access_. The idea is simple:
+
+> _“I want this app to access some of my resources, without handing it my password.”_
+
+Think of it like giving a valet your car keys. You don't want them driving to another city — just parking your car. OAuth defines the rules and limits of that delegation.
+
+### A Real OAuth Example: GitHub + CI/CD Tool
+
+Say you're using a CI/CD service (like Netlify, Vercel, or CircleCI). You want it to deploy code from your **private GitHub repos**. Instead of giving the service your GitHub credentials, you go through an OAuth flow:
+
+1. The CI/CD tool redirects you to GitHub's OAuth page.
+2. GitHub asks: _“This app wants to read and write your repos, and manage webhooks. Do you approve?”_
+3. You consent.
+4. The tool gets an **access token** from GitHub.
+5. It uses that token to call GitHub's API on your behalf.
+
+Notice what's missing here: the CI/CD tool doesn't really care _who you are_. It just needs the ability to act on your repos. That's pure OAuth.
+
+## Where Things Got Messy: Using OAuth for Authentication
+
+Over time, developers noticed OAuth's flow worked well for redirecting users, getting tokens, and establishing trust. So they started using it for **authentication** (logging users in).
+
+But here's the problem: an **access token** only says, _“This token holder can access these resources.”_ It doesn't prove _who the user is_.
+
+That gap opened the door for security issues like:
+
+- **Token substitution attacks** (a stolen token could log someone else in).
+- **Ambiguity** (apps had to invent their own way to figure out user identity).
+
+Clearly, something was missing.
+
+## Enter OpenID Connect: Authentication Layer on Top of OAuth
+
+To solve this, the industry created **OpenID Connect (OIDC)**. It's not a separate protocol from OAuth 2.0 — it's a layer on top of it.
+
+OIDC keeps OAuth's machinery (authorization codes, tokens, redirects) but adds identity-specific features:
+
+- **ID Token** → a special JWT (JSON Web Token) that contains user identity claims (e.g., email, user ID).
+- **UserInfo endpoint** → a standard way to fetch profile information.
+- **Defined authentication flows** → making it safe and interoperable.
+
+### Example: “Log in with Google”
+
+When you click _Log in with Google_:
+
+1. You're redirected to Google's OAuth/OIDC endpoint.
+2. You log in (if you aren't already).
+3. You approve the app's request.
+4. The app gets two tokens:
+
+   - An **access token** (for Google APIs, if needed).
+   - An **ID token** (JWT) that says _“This is Alice, email [alice@gmail.com](mailto:alice@gmail.com), verified by Google.”_
+
+Now the app can log you in securely, without guessing who you are.
+
+## OAuth vs OIDC
+
+- OAuth is a protocol for authorization, letting apps access resources on behalf of users with an access token.
+- OpenID Connect is a layer on top of OAuth for authentication, providing ID tokens that securely tell apps who the user is.
+
+### OAuth 2.0 Flow (Authorization, e.g. GitHub → CI/CD Tool)
+
+![OAuth 2.0 Flow (Authorization, e.g. GitHub → CI/CD Tool)](https://mermaid.ink/svg/pako:eNptU19vmzAQ_yrWPUyJRDJSSgk8VIpotUXaNLR1LxMvHlzBCviYbba2Ub77DmiidYmf7PPvn-7sPRRUIiRg8VePusA7JSsj21wLXp00ThWqk9qJ7xbNeXXTdUJa8VArUy4yvngeS7N0-z69Ew9Ezfyc9EG5j_3Pgfe62_SuJqNepFOkxTc0vy96Zdt_Odk21xNoiLa4vWXjRKSNKnYih5S0xsKJP8rVr5QcJjjjGD3VEvEVS2UGpCPxZQjyX5p7XXak2H42StmCOrTzN8ZHqU9UWaG0eCe4hdpZIYsCrZ2wE2hxzHmyHVXfWqY8kktR75-KWuoKR4B4JCM2owH3eYf6os05YJLk7nGvZNOMXZ0ynEOz7UkoM-Q4Lpac3FJvGCtmBjuynqiJdnYOHlRGlZA406MHLZpWDkfYD2o5uBpbzCHhbSnNbpjGgTk82h9E7ZFmqK9qSB5lY_nUd6V0xzd5gqAu0aTUawdJPCpAsocnSK7WN8s4iMLAD1dRGK1XHjxDEgXLtR_GYRBH8XV8tYoPHryMlv4yCsNVsI6vfWbcxH7kAc_Fkfk8_Yrxcxz-AoHyBKc)
+
+### OIDC Flow (Authentication, e.g. Log in with Google)
+
+![OIDC Flow (Authentication, e.g. Log in with Google)](https://mermaid.ink/svg/pako:eNptUt1P2zAQ_1dO9zC1WqgaspDGD2hViyamTZsGbNKUFys5UquJnTkOA6r-7zs7LQOBX_xxv4873-2wNBWhwJ7-DKRLWitZW9kWGnh10jpVqk5qBzc92devy64D2futUaV0yujXmE_G1A152OG0HNwGrsjekYXJt8v1Cr5bc6cqstPiwPduJ-fnrCtgxdJbKPCLqUFp-KuYPSoVOKIZxuDxTcAPqpSl0oEzENS9n7HqMeQHF7rqjNLuhdGRyx69N3kHsus4KepH2Bg_Oab0ZBGSeam_4g99K62L-3IjdU0BALfGwrXZkn7b4HI9RmHy-df1FN7Dsiyp78fH5-oB_VM2qpKOntEGrgv4S7VT7mH6n8EUX3KotKbK1-r7x19MMJF--1i3UjWz0rRTjLC2qkLh7EARtmQ5xFfcecEC3YZaboLgYyXt1rdjzxzu-m9j2iPNmqHeoLiVTc-3ofOZHsbsCUKau78yg3Yo8qCAYof3KE4XZ7M8ydJknsZZmi3iCB9QZMlsMU_zNMmz_EN-Guf7CB-D5XyWpWmcLPKzeRYHSoTcLGfs13HQw7zv_wECNvUO)
+
+## Takeaways
+
+- OAuth was **never meant for authentication**. Its purpose is authorization.
+- OIDC builds on OAuth to provide **authentication** via ID tokens.
+- If your app needs to access APIs on behalf of a user → **use OAuth**.
+- If your app needs to log in users securely → **use OIDC**.
+- If you try to use OAuth alone for authentication, you're in risky territory.
+
+## Closing Thought
+
+Next time someone asks, _“Is OAuth an authentication protocol?”_, you'll know the answer: **No — that's OpenID Connect.**
+
+OAuth lets apps act on your behalf. OIDC lets apps know who you are. Together, they power the login buttons and integrations we all use daily.
