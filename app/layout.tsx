@@ -1,25 +1,33 @@
 import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
-import Footer from "app/components/footer";
-import { Navbar } from "app/components/nav";
-import "app/global.css";
-import { baseUrl } from "app/sitemap";
+import Footer from "@/components/footer";
+import { Navbar } from "@/components/nav";
+import "@/global.css";
+import { baseUrl } from "@/sitemap";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Ajay Dandge",
+    default: "Ajay Dandge — Software Developer & Technical Writer",
     template: "%s | Ajay Dandge",
   },
-  description: "Ajay Dandge's Blog",
+  description:
+    "Developer blog covering software engineering, CLI tools, databases, authentication, and LLMs. Written by Ajay Dandge.",
   openGraph: {
-    title: "Ajay Dandge",
-    description: "Ajay Dandge's Blog",
+    title: "Ajay Dandge — Software Developer & Technical Writer",
+    description:
+      "Developer blog covering software engineering, CLI tools, databases, authentication, and LLMs. Written by Ajay Dandge.",
     url: baseUrl,
     siteName: "Ajay Dandge",
     locale: "en_US",
     type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Ajay Dandge — Software Developer & Technical Writer",
+    description:
+      "Developer blog covering software engineering, CLI tools, databases, authentication, and LLMs. Written by Ajay Dandge.",
   },
   robots: {
     index: true,

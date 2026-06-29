@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { getBlogPosts } from "app/blog/utils";
+import { getBlogPosts } from "@/blog/utils";
 
 export async function generateBlogMarkdown(slug: string) {
   const post = getBlogPosts().find((p) => p.slug === slug);

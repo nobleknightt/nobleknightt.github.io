@@ -1,8 +1,9 @@
-import { BlogPosts } from "app/components/posts";
+import { BlogPosts } from "@/components/posts";
 
 export const metadata = {
   title: "Blog",
-  description: "Read my blog.",
+  description:
+    "Technical posts on software engineering, databases, CLI tooling, authentication, and AI. Practical writing from real engineering problems.",
 };
 
 export default function Page() {

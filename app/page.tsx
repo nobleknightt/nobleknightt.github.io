@@ -1,8 +1,36 @@
-import { BlogPosts } from "app/components/posts";
+import { BlogPosts } from "@/components/posts";
+import { generateOgImage } from "@/blog/og-image";
+import { baseUrl } from "@/sitemap";
+
+export async function generateMetadata() {
+  await generateOgImage("Ajay Dandge", "home");
+  return {
+    openGraph: {
+      images: [{ url: `${baseUrl}/og/home.png` }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [`${baseUrl}/og/home.png`],
+    },
+  };
+}
 
 export default function Page() {
   return (
     <section>
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Person",
+            name: "Ajay Dandge",
+            url: baseUrl,
+            sameAs: ["https://github.com/nobleknightt"],
+          }),
+        }}
+      />
       <h1 className="mb-8 text-2xl font-semibold tracking-tighter">
         Ajay Dandge
       </h1>
