@@ -9,13 +9,13 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Ajay Dandge — Software Developer & Technical Writer",
-    template: "%s | Ajay Dandge",
+    default: "Ajay Dandge — Software Developer",
+    template: "%s — Ajay Dandge",
   },
   description:
     "Developer blog covering software engineering, CLI tools, databases, authentication, and LLMs. Written by Ajay Dandge.",
   openGraph: {
-    title: "Ajay Dandge — Software Developer & Technical Writer",
+    title: "Ajay Dandge — Software Developer",
     description:
       "Developer blog covering software engineering, CLI tools, databases, authentication, and LLMs. Written by Ajay Dandge.",
     url: baseUrl,
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Ajay Dandge — Software Developer & Technical Writer",
+    title: "Ajay Dandge — Software Developer",
     description:
       "Developer blog covering software engineering, CLI tools, databases, authentication, and LLMs. Written by Ajay Dandge.",
   },
