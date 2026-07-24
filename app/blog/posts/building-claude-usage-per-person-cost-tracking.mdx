@@ -1,0 +1,121 @@
+---
+title: "Building Claude Usage: Per-Person Cost Tracking on a Shared Claude Account"
+publishedAt: "2026-07-25"
+summary: "A plugin, a FastAPI and SQLite server, and a dashboard that track per-person token usage and cost when a team shares Claude accounts."
+---
+
+While we were adopting Claude Code, we had more developers than Claude accounts, so a few people shared each one. That's fine until you want to know who on an account is actually using it. Billing shows a total per account, not the split between the people behind it.
+
+So I built **Claude Usage**. A plugin records usage on each machine, a small FastAPI + SQLite server collects it, and a dashboard breaks it down per person. Most of the work wasn't capturing the data. Claude Code hands you that through hooks. It was what to do with it afterward.
+
+## The shape of the problem
+
+Claude Code already writes a transcript for every session, and it fires hooks at well-defined points. That's the whole opportunity: I don't need to intercept anything or wrap the CLI. I just need to *observe*.
+
+Two constraints shaped everything else:
+
+1. **Never get in the way.** A tracker that slows down or blocks Claude Code is worse than no tracker. It has to be a pure observer.
+2. **Attribute usage to a person, not the account.** A session's usage is billed to whichever account it runs under, not to the person at the keyboard. The interesting axis is the human running the session.
+
+## The plugin is a pure observer
+
+The plugin registers two hooks: `Stop` (end of a turn) and `SessionEnd`. The `Stop` hook reads the transcript, records the turn, and exits `0`. Always `0`, no matter what:
+
+```python
+try:
+    hook_data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)  # malformed input — never block Claude Code
+```
+
+If parsing fails, if the server is down, if the disk is full, Claude Code still stops normally. You shouldn't be able to tell the tracker broke.
+
+The other half of "never get in the way" is not blocking on the network. The hook doesn't POST anything. It writes to a **local SQLite outbox** and returns. A separate background step drains the queue to the server, and the `SessionEnd` hook does a final drain of whatever is still pending. If the server is unreachable, events sit in the queue as `pending` and go out on a later run, so nothing is lost when you're on a plane or the server is mid-deploy. The sync worker retries with exponential backoff, and after enough failures it gives up on an event instead of hammering forever:
+
+```python
+BACKOFF_SECONDS = [0, 2, 5, 15, 30, 60, 300, 900, 1800, 3600]
+MAX_ATTEMPTS = len(BACKOFF_SECONDS)
+```
+
+Delivery is idempotent. Every event carries a UUID, and the server ignores one it has already seen, so a retry after a half-succeeded POST never double-counts.
+
+## Identity comes from the key, not the payload
+
+This one is easy to get wrong. The plugin could just put `email` in the payload, but anything the client self-reports, the client can lie about.
+
+Instead, each machine is configured with an API key, and the server resolves the key to a user. The payload's job is to carry *metrics*, not *identity*:
+
+```python
+# Identity is the API key, resolved server-side — never self-reported.
+_insert_usage(conn, user["email"], event.payload)
+```
+
+There's a test that exists purely to keep me honest. It sends a payload claiming to be `attacker@evil.com` and asserts the row lands under the key's real owner.
+
+## Per-turn deltas, not cumulative snapshots
+
+The first version re-read the whole transcript on every `Stop` and summed all the tokens. That's simple, but each event then holds the session's *running total*, which means the server has to aggregate with `MAX()`, and you can never see what a single turn cost.
+
+The fix is to read only what was appended since last time. I keep a byte offset per session in a small `state.json`:
+
+```python
+offset = 0 if start_offset > size else start_offset  # file shrank? re-read from the top
+with path.open("rb") as fh:
+    fh.seek(offset)
+    chunk = fh.read()
+```
+
+Now each event is one turn's **delta**. The server stores a turn-by-turn timeline, aggregation becomes a plain `SUM()`, and the dashboard can show you which turn in a session blew the budget. The `> size` check handles compaction: if the transcript got shorter than our offset, it was rewritten, so we start over.
+
+## Cost: use the real number, compute it when you can't
+
+Claude Code sometimes reports `total_cost_usd` in the transcript and sometimes it's zero. Rather than pick one source, I use both: the transcript's number when it's there, otherwise a value computed from the token counts and a per-model price table.
+
+```python
+reported = float(p.get("cost_usd") or 0)
+if reported > 0:
+    return round(reported, 6), "transcript"
+# else: tokens × model_pricing → ("computed" or "unpriced")
+```
+
+Every row records where its cost came from: `transcript`, `computed`, or `unpriced`. The dashboard marks estimated costs with a small `~` so nobody mistakes a computed number for a billed one.
+
+## Three roles, one visibility rule
+
+The access model took a few tries to get right. It comes down to three roles:
+
+- **Member:** sees only their own usage.
+- **Account owner:** the person whose login email *is* the shared account's email. They see everyone billed to that account.
+- **Admin:** sees everything, across all accounts.
+
+That "account owner" definition is the neat part. I don't maintain a separate ownership table; ownership is just `login_email == account_email`. The whole rule is one WHERE clause:
+
+```python
+if not user["is_admin"]:
+    conditions.append("(email = ? OR account_email = ?)")
+    params += [user["email"], user["email"]]
+```
+
+The same clause guards the summary, the sessions list, the per-session timeline, and the accounts view. One rule, applied everywhere, is a lot easier to trust than four.
+
+## What it never sends
+
+People will ask, so it's worth stating plainly: the plugin sends metrics only. Token counts, model, cost, session ID, and the working directory. Prompts, responses, and tool inputs and outputs never leave your machine.
+
+## Where it landed
+
+The server runs as a single container: one FastAPI process, one SQLite file, and the built dashboard served from the same origin. Dashboard auth is Microsoft Entra ID.
+
+The plugin ships as a **Claude Code marketplace**, which is just a `marketplace.json` hosted in a GitHub repo. You point Claude Code at the repo, then install with the key and server URL you got from the dashboard:
+
+```bash
+claude plugin marketplace add nobleknightt/claude-usage-plugin
+claude plugin install claude-usage@claude-usage \
+  --config API_KEY=<your-key> --config BASE_URL=<your-server-url>
+```
+
+The hooks start recording on your next session. It's small enough to self-host in an afternoon, which was the point.
+
+Almost none of this was about fighting Claude Code. It hands you transcripts and hooks and gets out of the way. The work was in what came after the data: surviving an offline laptop, not trusting the client, and figuring out what a "turn" even is. Though, as usual, that last one was tougher than it looked.
+
+The full source (plugin, server, and dashboard) is on GitHub: [nobleknightt/claude-usage-plugin](https://github.com/nobleknightt/claude-usage-plugin).
