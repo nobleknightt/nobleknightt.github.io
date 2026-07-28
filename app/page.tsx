@@ -50,7 +50,7 @@ export default function Page() {
         >
           Contests
         </a>
-        {`, a simple platform to track upcoming programming contests, and `}
+        {`, a simple platform to track upcoming programming contests, `}
         <a
           href="https://coderun.ajaydandge.dev/"
           target="_blank"
@@ -59,7 +59,25 @@ export default function Page() {
         >
           CodeRun
         </a>
-        {`, an online code runner to quickly write, run, and test code.`}
+        {`, an online code runner to quickly write, run, and test code, `}
+        <a
+          href="http://burrow.ajaydandge.dev/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-4"
+        >
+          Burrow
+        </a>
+        {`, a CLI to query PostgreSQL and MySQL databases directly or through an SSH tunnel, and `}
+        <a
+          href="https://github.com/nobleknightt/claude-usage-plugin"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-4"
+        >
+          Claude Usage Plugin
+        </a>
+        {`, a tool for per-user token, cost, and session tracking in Claude Code.`}
       </p>
       <div className="my-8">
         <BlogPosts />
