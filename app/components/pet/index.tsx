@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Oneko } from './oneko';
-import { Oinu } from './oinu';
-import { Ousagi } from './ousagi';
+import dynamic from 'next/dynamic';
+
+const Oneko = dynamic(() => import('./oneko').then((mod) => mod.Oneko), { ssr: false });
+const Oinu = dynamic(() => import('./oinu').then((mod) => mod.Oinu), { ssr: false });
+const Ousagi = dynamic(() => import('./ousagi').then((mod) => mod.Ousagi), { ssr: false });
 
 export function Pet() {
   const [activePet, setActivePet] = useState<'cat' | 'dog' | 'rabbit' | null>(null);
@@ -25,3 +27,4 @@ export function Pet() {
   if (activePet === 'rabbit') return <Ousagi />;
   return null;
 }
+

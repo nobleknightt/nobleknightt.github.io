@@ -5,7 +5,7 @@ import { Navbar } from "@/components/nav";
 import { Pet } from "@/components/pet";
 import "@/global.css";
 import { baseUrl } from "@/sitemap";
-import { GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -66,7 +66,19 @@ export default function RootLayout({
           <Footer />
         </main>
       </body>
-      <GoogleAnalytics gaId="G-3V3L4N4VS7" />
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-3V3L4N4VS7"
+        strategy="lazyOnload"
+      />
+      <Script id="google-analytics" strategy="lazyOnload">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-3V3L4N4VS7');
+        `}
+      </Script>
     </html>
   );
 }
+
