@@ -1,0 +1,184 @@
+---
+title: "Optimizing Mobile PageSpeed Insights: How I Reached 99 on Performance"
+publishedAt: "2026-07-29"
+summary: "A practical breakdown of how deferring analytics scripts, code-splitting client components, and updating transpilation targets boosted my portfolio's Mobile PageSpeed score from 85 to 99/100."
+---
+
+When testing my developer portfolio on [Google PageSpeed Insights](https://pagespeed.web.dev/), the Accessibility, Best Practices, and SEO scores were all sitting at a clean 100/100. But the **Mobile Performance** score was stuck at **85/100**.
+
+While 85 isn't terrible, a static Next.js site shouldn't be lagging on mobile CPU emulation. Here is how I diagnosed what was blocking the main thread and optimized it to **99/100**.
+
+---
+
+## 1. Finding the Bottlenecks
+
+Running a Lighthouse audit revealed that my **Total Blocking Time (TBT)** was **580ms** (the standard recommended target is under 200ms).
+
+Digging into the diagnostic trace showed three main contributors:
+
+1. **Synchronous Google Analytics Script (`gtag.js`)**: Injected via `@next/third-parties/google`, it transferred ~154 KiB of JavaScript and locked the main thread for over 370ms during Next.js hydration.
+2. **Eager Component Imports**: Interactive retro pet animation components (`Oneko`, `Oinu`, `Ousagi`) were statically imported at the top of my layout component. All three sprite controllers were bundled into the main shared JavaScript chunk even though only one pet is randomly rendered after mount.
+3. **Legacy JavaScript Polyfills**: The project's TypeScript compilation target was set to `ES2017`. Next.js automatically injected `core-js` polyfills (`Array.prototype.at`, `Object.hasOwn`, `Array.prototype.flatMap`), adding ~11.6 KiB of redundant JavaScript for features native in modern browsers.
+
+### Automating Audits with Lighthouse CLI
+
+To diagnose and verify these bottlenecks locally without clicking through the web UI, I ran the **Lighthouse CLI** via `bunx`:
+
+```bash
+bunx --bun lighthouse https://ajaydandge.dev \
+  --form-factor=mobile \
+  --output=json \
+  --chrome-flags="--headless" > mobile-report.json
+```
+
+Running Lighthouse CLI in headless mode produces an exact JSON trace containing detailed metric scores, long main-thread task timelines, and specific resource savings that can be inspected directly from the terminal.
+
+---
+
+## 2. The Fixes
+
+### Deferring Google Analytics with `lazyOnload`
+
+Instead of letting Google Tag Manager compete with initial page hydration for CPU time, I replaced the default `<GoogleAnalytics />` component with Next.js `<Script>` using `strategy="lazyOnload"`.
+
+**Before (Synchronous Hydration Block)**:
+
+```tsx
+import { GoogleAnalytics } from "@next/third-parties/google";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Pet />
+        <main>{children}</main>
+      </body>
+      <GoogleAnalytics gaId="G-3V3L4N4VS7" />
+    </html>
+  );
+}
+```
+
+**After (Deferred Idle Loading)**:
+
+```tsx
+import Script from "next/script";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Pet />
+        <main>{children}</main>
+      </body>
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-3V3L4N4VS7"
+        strategy="lazyOnload"
+      />
+      <Script id="google-analytics" strategy="lazyOnload">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-3V3L4N4VS7');
+        `}
+      </Script>
+    </html>
+  );
+}
+```
+
+`strategy="lazyOnload"` schedules script execution during browser idle time (`requestIdleCallback`) *after* the page is fully interactive.
+
+---
+
+### Code-Splitting Interactive Client Components
+
+Next, I updated the `Pet` component to lazily load the pet animation modules using Next.js `dynamic()`.
+
+**Before (Static Imports Included All Pets upfront)**:
+
+```tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Oneko } from './oneko';
+import { Oinu } from './oinu';
+import { Ousagi } from './ousagi';
+
+export function Pet() {
+  const [activePet, setActivePet] = useState<'cat' | 'dog' | 'rabbit' | null>(null);
+
+  useEffect(() => {
+    const rand = Math.random();
+    if (rand < 0.33) setActivePet('cat');
+    else if (rand < 0.66) setActivePet('dog');
+    else setActivePet('rabbit');
+  }, []);
+
+  if (activePet === 'cat') return <Oneko />;
+  if (activePet === 'dog') return <Oinu />;
+  if (activePet === 'rabbit') return <Ousagi />;
+  return null;
+}
+```
+
+**After (Dynamic Code-Splitting with `next/dynamic`)**:
+
+```tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+
+const Oneko = dynamic(() => import('./oneko').then((m) => m.Oneko), { ssr: false });
+const Oinu = dynamic(() => import('./oinu').then((m) => m.Oinu), { ssr: false });
+const Ousagi = dynamic(() => import('./ousagi').then((mod) => mod.Ousagi), { ssr: false });
+
+export function Pet() {
+  const [activePet, setActivePet] = useState<'cat' | 'dog' | 'rabbit' | null>(null);
+
+  useEffect(() => {
+    const rand = Math.random();
+    if (rand < 0.33) setActivePet('cat');
+    else if (rand < 0.66) setActivePet('dog');
+    else setActivePet('rabbit');
+  }, []);
+
+  if (activePet === 'cat') return <Oneko />;
+  if (activePet === 'dog') return <Oinu />;
+  if (activePet === 'rabbit') return <Ousagi />;
+  return null;
+}
+```
+
+Now, only the chosen pet chunk is loaded on mount, keeping unused pet code out of the initial bundle.
+
+---
+
+### Upgrading Target to ES2022
+
+I updated `tsconfig.json` to target `ES2022`:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022"
+  }
+}
+```
+
+This prevents the bundler from polyfilling native modern array and object methods.
+
+---
+
+## 3. Results
+
+After deploying the changes to GitHub Pages, the new Mobile PageSpeed Insights run showed significant gains:
+
+- **Performance Score (Mobile)**: Improved from **85/100** to **99/100** (+14 points).
+- **Total Blocking Time (TBT)**: Slashed from **580ms** down to **~40–50 ms** (over 90% reduction).
+- **Speed Index**: Faster from **2.2s** to **1.8s** (18% speedup).
+- **First Load Shared JS**: Reduced from **~125 kB** to **106 kB** (15% smaller bundle).
+
+Small, targeted changes to script loading strategy and dynamic imports can unlock near-perfect PageSpeed scores without stripping features.

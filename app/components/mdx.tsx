@@ -14,7 +14,7 @@ import http from "highlight.js/lib/languages/http";
 import python from "highlight.js/lib/languages/python";
 import toml from "highlight.js/lib/languages/ini"; // toml uses ini highlighter
 import yaml from "highlight.js/lib/languages/yaml";
-
+import json from "highlight.js/lib/languages/json";
 
 import "highlight.js/styles/github-dark.css";
 
@@ -28,6 +28,7 @@ hljs.registerLanguage("http", http);
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("toml", toml);
 hljs.registerLanguage('yaml', yaml);
+hljs.registerLanguage('json', json);
 
 function Table({ data }) {
   let headers = data.headers.map((header, index) => (
