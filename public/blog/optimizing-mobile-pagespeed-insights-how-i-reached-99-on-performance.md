@@ -1,10 +1,10 @@
 ---
 title: "Optimizing Mobile PageSpeed Insights: How I Reached 99 on Performance"
 publishedAt: "2026-07-29"
-summary: "A practical breakdown of how deferring analytics scripts, code-splitting client components, and updating transpilation targets boosted my portfolio's Mobile PageSpeed score from 85 to 99/100."
+summary: "A practical breakdown of how deferring analytics scripts, code-splitting client components, and updating transpilation targets boosted this blog's Mobile PageSpeed score from 85 to 99/100."
 ---
 
-When testing my developer portfolio on [Google PageSpeed Insights](https://pagespeed.web.dev/), the Accessibility, Best Practices, and SEO scores were all sitting at a clean 100/100. But the **Mobile Performance** score was stuck at **85/100**.
+When testing this blog on [Google PageSpeed Insights](https://pagespeed.web.dev/), the Accessibility, Best Practices, and SEO scores were all sitting at a clean 100/100. But the **Mobile Performance** score was stuck at **85/100**.
 
 While 85 isn't terrible, a static Next.js site shouldn't be lagging on mobile CPU emulation. Here is how I diagnosed what was blocking the main thread and optimized it to **99/100**.
 
