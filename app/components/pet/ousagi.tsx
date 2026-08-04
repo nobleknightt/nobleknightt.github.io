@@ -17,7 +17,7 @@ export function Ousagi() {
     rabbitEl.style.position = 'fixed';
     rabbitEl.style.pointerEvents = 'none';
     rabbitEl.style.imageRendering = 'pixelated';
-    rabbitEl.style.backgroundImage = "url('/ousagi.png')";
+    rabbitEl.style.backgroundImage = "url('/ousagi.webp')";
     rabbitEl.style.zIndex = '9999';
     rabbitEl.style.filter = 'grayscale(100%) brightness(200%) contrast(200%)';
     

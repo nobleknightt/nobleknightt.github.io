@@ -17,7 +17,7 @@ export function Oinu() {
     dogEl.style.position = 'fixed';
     dogEl.style.pointerEvents = 'none';
     dogEl.style.imageRendering = 'pixelated';
-    dogEl.style.backgroundImage = "url('/oinu.gif')";
+    dogEl.style.backgroundImage = "url('/oinu.webp')";
     dogEl.style.zIndex = '9998'; // Render just behind Oneko
     
     // Initial position

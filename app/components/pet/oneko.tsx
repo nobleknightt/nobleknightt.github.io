@@ -17,7 +17,7 @@ export function Oneko() {
     nekoEl.style.position = 'fixed';
     nekoEl.style.pointerEvents = 'none';
     nekoEl.style.imageRendering = 'pixelated';
-    nekoEl.style.backgroundImage = "url('/oneko.gif')";
+    nekoEl.style.backgroundImage = "url('/oneko.webp')";
     nekoEl.style.zIndex = '9999';
     
     // Initial position
